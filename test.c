@@ -36,9 +36,9 @@ static const int STEP  = 10;
 static const float ALPHA = 0.1; // Learning rate (rate at which new training samples replace previous knowledge)
 static const float GAMMA = 0.9; // Discount factor (defines relative values of the immediate vs delayed reward)
 static const int EPSILON = 15; // Exploration rate in epsilon-greedy action select (% of random action instead of optimal)
-/*
 
-Drawing of the board, divided in its 4 quadrants we use for our states in Q-learning (due to memory restrictions)
+/*
+Drawing of the board divided in its 4 quadrants we use for our states in Q-learning (due to memory restrictions)
 
 E.g.: actions in quadrant B, state (3,1) are the same as in quadrant A for the same state, mirrored over the X-axis
 
@@ -92,13 +92,13 @@ int  main() {
 	// 	13x13x5 = 845 floats = 3380 bytes >>> 1024 available
 	// Note that even with using ints for the float math, it would be impossible (sizeof(int) = 2)
 	float qvalues[7][7][3] = {}; // (7x7x4 floats) x 4 bytes = 784 bytes
-	int numActions = 3;
+	int num_actions = 3; // neutral, away from x-axis, away from y-axis
 	
 	while(1) {
 		//Ask the accelerometer for the direction
 		direction d = sendMessage(acc,getDirection);
 		moveBall(b, d, STEP);
-		_delay_ms(75);	
+		_delay_ms(150);	
 		
 		// Get the current state (x,y)
 		int x = b->x_pos / 10;
@@ -111,38 +111,35 @@ int  main() {
 		y = (y > 6) ? (12 - y) : y;
 		
 		// Choose an action following epsilon-greedy
-		int actionIdx;
+		int action_idx;
 		if ((rand() % 101) < EPSILON){ // TODO: achieve better randomness using randint(n) -> it will take memory !
 			// Choose a random action with a probability of epsilon
-			actionIdx = rand() % numActions;
+			action_idx = rand() % num_actions;
 		} else {
 			// Choose the best action (= max Q-value) with probability 1-epsilon
-			// TODO: Make bias towards neutral action by counting down from i=4; i>=0; i--
-			actionIdx = 0;
+			action_idx = 0;
 			int i;
-			for (i = 1; i < numActions; i++) {
-				if (qvalues[x][y][i] > qvalues[x][y][actionIdx]) {
-					actionIdx = i;
+			for (i = 1; i < num_actions; i++) {
+				if (qvalues[x][y][i] > qvalues[x][y][action_idx]) {
+					action_idx = i;
 				}
 			}
 		}
-		
-		direction action = (direction) actionIdx;
+		// We map the action index on an actual action
+		// direction action = (direction) num_actions - 1 - action_idx; // biased towards neutral action
+		direction action;
+		switch(action_idx){
+			case 0: action = NEUTRAL; break; // stay in position
+			case 1: action = LEFT;	  break; // move away from x-axis
+			case 2: action = UP; 	  break; //
+		}
 		// We have to map the inverse direction depending on the quadrant we are in (default A)
 		// (see drawing)
-		if (b->x_pos > 60){ // Quadrant B / D
-			switch(action) {
-				case LEFT:  action = RIGHT; break;
-				case RIGHT: action = LEFT; break;
-				default: break;
-			}
+		if (b->x_pos > 61 && action == LEFT){ // Quadrant B / D
+			action = RIGHT;
 		}
-		if (b->y_pos > 60){ // Quadrant C / D
-			switch(action) {
-				case DOWN:  action = UP; break;
-				case UP: 	action = DOWN; break;
-				default: break;
-			}
+		if (b->y_pos > 61 && action == UP){ // Quadrant C / D
+			action = DOWN;
 		}
 		
 		// Perform the action
@@ -159,27 +156,28 @@ int  main() {
 		new_y = (new_y > 6) ? (12 - new_y) : new_y;
 			
 		// Get the qvalue for the best possible action in for the new state (call e-greedy with e=0)
-		int new_action = 0;
+		int new_action_idx = 0;
 		int i; 
-		for (i = 0; i< numActions; i++) { 
-			if (qvalues[new_x][new_y][i] > qvalues[new_x][new_y][new_action]){
-				new_action = i;
+		for (i = 0; i< num_actions; i++) { 
+			if (qvalues[new_x][new_y][i] > qvalues[new_x][new_y][new_action_idx]){
+				new_action_idx = i;
 			}
 		}
 		
 		// Get the reward and reposition if needed
-		int reward = 0;
+		// TODO : make the reward based on how far the ball is from the wall ?
+		int reward = -1;
 		if (new_x == 6 && new_y == 6){
-			reward = 1;
+			reward = 10;
 		} else if (new_x == 0  || new_y == 0 || new_x == 12 || new_y == 12) {
-	   		reward = -1;
+	   		reward = -100;
 	   	}
 		if (b->y_pos > SCREEN_HEIGHT-SIZE || b->y_pos < 0 || b->x_pos > SCREEN_WIDTH-SIZE  || b->x_pos < 0) {
 			sendMessage(b, move, (SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2);
 		}
 		
 		// Update our q-values using the Q-learning update rule
-		qvalues[x][y][actionIdx] += ALPHA * (reward + GAMMA	 * qvalues[new_x][new_y][new_action] -  qvalues[x][y][actionIdx]);
+		qvalues[x][y][action_idx] += ALPHA * (reward + GAMMA	 * qvalues[new_x][new_y][new_action_idx] -  qvalues[x][y][action_idx]);
 				
 		_delay_ms(75);
 	}

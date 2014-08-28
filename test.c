@@ -22,7 +22,6 @@
 #include <util/delay.h>
 #include <stdio.h>
 #include <stdlib.h>	 
-#include <assert.h>  
 	   
 // Function prototypes
 int randint();
@@ -171,9 +170,9 @@ int  main() {
 		// Get the reward and reposition if needed
 		int reward = 0;
 		if (new_x == 6 && new_y == 6){
-			reward = 100;
+			reward = 1;
 		} else if (new_x == 0  || new_y == 0 || new_x == 12 || new_y == 12) {
-	   		reward = -100;
+	   		reward = -1;
 	   	}
 		if (b->y_pos > SCREEN_HEIGHT-SIZE || b->y_pos < 0 || b->x_pos > SCREEN_WIDTH-SIZE  || b->x_pos < 0) {
 			sendMessage(b, move, (SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2);
@@ -181,7 +180,7 @@ int  main() {
 		
 		// Update our q-values using the Q-learning update rule
 		qvalues[x][y][actionIdx] += ALPHA * (reward + GAMMA	 * qvalues[new_x][new_y][new_action] -  qvalues[x][y][actionIdx]);
-		
+				
 		_delay_ms(75);
 	}
 	//cleanup

@@ -306,7 +306,7 @@ direction getDirection(Accelerometer* acc) {
 	if (readPulse(acc->y_pin)> 9920) return DOWN;		
 };
 
-int getDetailedDirection() {
+int getDetailedDirection(Accelerometer* acc) {
 	//todo
 };
 

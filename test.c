@@ -31,6 +31,7 @@ static const int SIZE = 10;
 static const int X_PIN = 2;
 static const int Y_PIN = 3;
 static const int STEP  = 10;
+static const int RL_STEP = 10;
 
 // LEARNER PARAMS
 static const float ALPHA = 0.1; // Learning rate (rate at which new training samples replace previous knowledge)
@@ -56,7 +57,7 @@ E.g.: actions in quadrant B, state (3,1) are the same as in quadrant A for the s
 2 |                  |                 |
 1 |                  |                 |
 0 +------------------+-----------------+
-
+*
 */ 
 
 void initializeBoard() {
@@ -88,10 +89,9 @@ int  main() {
 	Accelerometer* acc = newAccelerometer(X_PIN,Y_PIN); 
 		
 	// Initialize our Q-values table
-	// We do not have enough memory for a simple 13 x, 13y, 5 actions mapping:
-	// 	13x13x5 = 845 floats = 3380 bytes >>> 1024 available
+	// We do not have enough memory for a simple 13 x, 13y, 5 actions mapping (13x13x5 = 845 floats = 3380 bytes >>> 1024)
 	// Note that even with using ints for the float math, it would be impossible (sizeof(int) = 2)
-	float qvalues[7][7][3] = {}; // (7x7x4 floats) x 4 bytes = 784 bytes
+	float qvalues[7][7][3] = {}; // (7x7x4 floats) x 4 bytes = 588 bytes
 	int num_actions = 3; // neutral, away from x-axis, away from y-axis
 	
 	while(1) {
@@ -112,7 +112,8 @@ int  main() {
 		
 		// Choose an action following epsilon-greedy
 		int action_idx;
-		if ((rand() % 101) < EPSILON){ // TODO: achieve better randomness using randint(n) -> it will take memory !
+		if ((rand() % 101) < EPSILON){ 
+			// TODO: achieve better randomness using randint(n) -> it will take memory !
 			// Choose a random action with a probability of epsilon
 			action_idx = rand() % num_actions;
 		} else {
@@ -126,7 +127,6 @@ int  main() {
 			}
 		}
 		// We map the action index on an actual action
-		// direction action = (direction) num_actions - 1 - action_idx; // biased towards neutral action
 		direction action;
 		switch(action_idx){
 			case 0: action = NEUTRAL; break; // stay in position
@@ -143,7 +143,7 @@ int  main() {
 		}
 		
 		// Perform the action
-		moveBall(b, action, 5);
+		moveBall(b, action, RL_STEP);
 		
 		// Get the new state (x,y)
 		int new_x = b->x_pos / 10;
@@ -172,13 +172,15 @@ int  main() {
 		} else if (new_x == 0  || new_y == 0 || new_x == 12 || new_y == 12) {
 	   		reward = -100;
 	   	}
-		if (b->y_pos > SCREEN_HEIGHT-SIZE || b->y_pos < 0 || b->x_pos > SCREEN_WIDTH-SIZE  || b->x_pos < 0) {
-			sendMessage(b, move, (SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2);
-		}
 		
 		// Update our q-values using the Q-learning update rule
 		qvalues[x][y][action_idx] += ALPHA * (reward + GAMMA	 * qvalues[new_x][new_y][new_action_idx] -  qvalues[x][y][action_idx]);
 				
+		// Throw our ball back to reset position if it crossed the bounds	
+		if (b->y_pos > SCREEN_HEIGHT-SIZE || b->y_pos < 0 || b->x_pos > SCREEN_WIDTH-SIZE  || b->x_pos < 0) {
+			sendMessage(b, move, (SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2);
+		}
+		
 		_delay_ms(75);
 	}
 	//cleanup

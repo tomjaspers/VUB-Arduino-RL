@@ -180,7 +180,7 @@ typedef struct ball {
 Ball* createBall(int x, int y,int w,int h);
 
 
-typedef enum { LEFT,RIGHT,DOWN,UP } direction; 
+typedef enum { LEFT,RIGHT,DOWN,UP,NEUTRAL } direction; 
 
 typedef struct  acc {
 	int x_pin;

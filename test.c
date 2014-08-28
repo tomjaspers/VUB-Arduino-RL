@@ -33,6 +33,10 @@ static const int X_PIN = 2;
 static const int Y_PIN = 3;
 static const int STEP  = 10;
 
+// LEARNER PARAMS
+static const float ALPHA = 0.1; // Learning rate (rate at which new training samples replace previous knowledge)
+static const float GAMMA = 0.9; // Discount factor (defines relative values of the immediate vs delayed reward)
+static const int EPSILON = 15; // Exploration rate in epsilon-greedy action select (% of random action instead of optimal)
 /*
 
 Drawing of the board, divided in its 4 quadrants we use for our states in Q-learning (due to memory restrictions)
@@ -78,16 +82,12 @@ int  main() {
 	//Create ball in the center of the screen
 	Ball* b = createBall((SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2, SIZE,SIZE);
 	// Draw the ball in its initial position 
-	fillRectangle(ball->x_pos, ball->y_pos, ball->width, ball->height, ball->color);
+	fillRectangle(b->x_pos, b->y_pos, b->width, b->height, b->color);
 	//Set the ball to be white
 	b->color = WHITE;
 	//Create an accelerometer connected to the X and Y_PIN 
 	Accelerometer* acc = newAccelerometer(X_PIN,Y_PIN); 
-	// Set the parameters for the Q-learning algorithm with epsilon-greedy action selection
-    float alpha = 0.1; // Learning rate (rate at which new training samples replace previous knowledge)
-	float gamma = 0.9; // Discount factor (defines relative values of the immediate vs delayed reward)
-	int epsilon = 10; // Exploration rate in epsilon-greedy action selection (percentage at which a random action instead of optimal is chosen)
-	
+		
 	// Initialize our Q-values table
 	// We do not have enough memory for a simple 13 x, 13y, 5 actions mapping:
 	// 	13x13x5 = 845 floats = 3380 bytes >>> 1024 available
@@ -113,7 +113,7 @@ int  main() {
 		
 		// Choose an action following epsilon-greedy
 		int actionIdx;
-		if ((rand() % 101) < epsilon){ // TODO: achieve better randomness using randint(n) -> it will take memory !
+		if ((rand() % 101) < EPSILON){ // TODO: achieve better randomness using randint(n) -> it will take memory !
 			// Choose a random action with a probability of epsilon
 			actionIdx = rand() % numActions;
 		} else {
@@ -180,7 +180,7 @@ int  main() {
 		}
 		
 		// Update our q-values using the Q-learning update rule
-		qvalues[x][y][actionIdx] += alpha * (reward + gamma	 * qvalues[new_x][new_y][new_action] -  qvalues[x][y][actionIdx]);
+		qvalues[x][y][actionIdx] += ALPHA * (reward + GAMMA	 * qvalues[new_x][new_y][new_action] -  qvalues[x][y][actionIdx]);
 		
 		_delay_ms(75);
 	}

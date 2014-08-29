@@ -183,8 +183,9 @@ int getReward(int x, int y){
 
 
 int  main() {
-	srand(0.314); // TODO: how to init this without time.h ?
 	initializeBoard();
+	// Seed rand: if nothing is connected to the pins, they can pick up environmental noise (= ~ random)
+	srand(readAnalog(0)); 
 	//Create ball in the center of the screen
 	Ball* b = createBall((SCREEN_WIDTH/2)-SIZE/2,(SCREEN_HEIGHT/2)-SIZE/2, SIZE,SIZE);
 	// Draw the ball in its initial position 

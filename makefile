@@ -27,8 +27,8 @@ all:
 	$(OO) -O ihex -R .eeprom test test.hex
 
 upload: 
-	$(DU) -F -V -c arduino -p ATMEGA168P -P /dev/tty.usbserial-A5002tJY  -b 19200 -U flash:w:test.hex -v
-
+	$(DU) -F -V -c arduino -p ATMEGA168P -P /dev/tty.usbserial-A4000Qgu  -b 19200 -U flash:w:test.hex -v
+	
 doc:	
 	doxygen config
 
